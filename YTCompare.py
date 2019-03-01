@@ -2,19 +2,16 @@
 YTCompare
 """
 import requests
-"""
-API Reference URL
-https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=PLqq-6Pq4lTTZh5U8RbdXq0WaYvZBz2rbn&key=AIzaSyCg3WitBUQl5ifC2QygQaZUPOSRMKfSD5E&nextpage=1
-"""
+import os
 
 
-def gather_data(playlist_id_, page_token_=None):
+def gather_data(playlist_id_, api_key_, page_token_=None):
     """Receive playlist data from YouTube's API"""
     url = "https://www.googleapis.com/youtube/v3/playlistItems"
-    api_key = "ENTER API KEY HERE"
-    max_results = 50 # 50 is max
 
-    parameters = {"key": api_key,
+    max_results = 50 # 50 is YouTube's max for a request
+
+    parameters = {"key": api_key_,
                   "maxResults": max_results,
                   "playlistId": playlist_id_,
                   "part": "snippet",}
@@ -26,13 +23,25 @@ def gather_data(playlist_id_, page_token_=None):
     return response.json()
 
 
+def gather_local_data():
+    dir = input("Enter the directory where your music"
+                + " is stored. \n(Example: C:\\Users\\User\\Desktop\\Misc\\Music\\):")
+    local_songs = os.listdir(dir)
+    i = 0
+    for song_ in local_songs:
+        local_songs[i] = os.path.splitext(song_)[0]
+        i = i + 1
+    return local_songs
+
+
 if __name__ == "__main__":
     domain = "www.youtube.com/watch?v="
-    #playlist_id = "PLt-RfMTsSUDF0vjKuKmVS9r0xpwjI3vyj" # Mine
-    playlist_id = "PLdy_Z-y66LeLNgbrAq6fXnuO42Lolm_dD" # Jordan's
-    data = gather_data(playlist_id)
-    page_token = data['nextPageToken']
+    local_song_list = gather_local_data()
+    playlist_id = input("Enter your YouTube Playlist ID: ")
+    api_key = input("Enter your YouTube Data v3 API key: ")
 
+    data = gather_data(playlist_id, api_key)
+    page_token = data['nextPageToken']
     songs_and_urls = {}
     next_page_available = True
     use_token = False
@@ -40,9 +49,9 @@ if __name__ == "__main__":
 
     while next_page_available:
         if not use_token:
-            data = gather_data(playlist_id)
+            data = gather_data(playlist_id, api_key)
         else:
-            data = gather_data(playlist_id, page_token)
+            data = gather_data(playlist_id, api_key, page_token)
         try:
             page_token = data['nextPageToken']
         except KeyError:
@@ -57,11 +66,57 @@ if __name__ == "__main__":
         use_token = True
     print("Song count: " + str(song_count))
 
+    """
     for song in songs_and_urls:
         print("=====================================")
         print(song)
         print("Title: " + songs_and_urls[song]['Title'])
         print("URL: " + songs_and_urls[song]["URL"])
+    """
+
+    needed_songs = {}
+
+    song_number = 0
+    for song in songs_and_urls:
+        song_needed = False
+        youtube_song_title = songs_and_urls[song]['Title']
+        for local_song in local_song_list:
+            try:
+                if youtube_song_title == local_song:
+                    song_needed = False
+                    break
+                elif youtube_song_title[0:16] == local_song[0:16]:
+                    print("Song 1: " + youtube_song_title)
+                    print("Song 2: " + local_song)
+                    user_input = input("Are these songs the same? (Enter 1 if yes (or just press enter), enter 2 if not): ")
+                    if user_input.lower() == "2" or user_input.lower() == "no":
+                        song_needed = True
+                        break
+                    else:
+                        song_needed = False
+                        break
+                elif youtube_song_title != local_song:
+                    song_needed = True
+            except IndexError:
+                print("Song 1: " + youtube_song_title)
+                print("Song 2: " + local_song)
+                user_input = input("Are these songs the same? (Enter 1 if yes, enter 2 if not.")
+                if user_input.lower() == "2" or user_input.lower() == "no":
+                    song_needed = True
+                else:
+                    song_needed = False
+        if song_needed:
+            needed_songs[song_number] = {
+                                    "Title": youtube_song_title,
+                                    "URL": songs_and_urls[song]["URL"],
+                                 }
+            song_number += 1
+
+    with open("song_urls.txt", "w") as file:
+        for song in needed_songs:
+            file.write(needed_songs[song]["URL"] + "\n")
+
+    print("Finished. Your song URLs can be found in a text document within the directory from where you ran this tool.")
 
 
 
