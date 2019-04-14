@@ -1,16 +1,16 @@
 # YTCompare
-A command-line tool to compare YouTube playlist songs to songs on your local machine and outputs a text file with links to missing songs. Combine with [youtube-dl-gui](https://github.com/MrS0m30n3/youtube-dl-gui) to download any missing songs.  
+A GUI tool to compare YouTube playlist songs to songs on your local machine and outputs a text file with links to missing songs. Combine with [youtube-dl-gui](https://github.com/MrS0m30n3/youtube-dl-gui) to download any missing songs.  
 
-This program will output a text file containing the missing song URLs in the directory from which it was run.
+This program will output a text file (song_urls.txt) containing the missing song URLs in the directory from which it was run.
 
 ## Requirements
 Python 3
 
+PySimpleGUI (`pip install PySimpleGUI` or `python -m pip install PySimpleGUI`)
+
  Requests (`pip install requests` or `python -m pip install requests`)
  
- You will have to provide a YouTube Data v3 API key.
-
-Go [here](https://developers.google.com/youtube/v3/getting-started) for information on obtaining an API key.
+ You will have to provide a [YouTube Data v3 API key.](https://developers.google.com/youtube/v3/getting-started)
 
 ## Installation
 Clone the repo or download `YTCompare.py`, run via command-line with `python YTCompare.py` and follow the prompts.

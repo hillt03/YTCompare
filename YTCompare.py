@@ -3,6 +3,7 @@ YTCompare
 """
 import requests
 import os
+import PySimpleGUI as sg
 
 
 def gather_data(playlist_id_, api_key_, page_token_=None):
@@ -25,11 +26,7 @@ def gather_data(playlist_id_, api_key_, page_token_=None):
     return response.json()
 
 
-def gather_local_data():
-    directory = input(
-        "Enter the directory where your music"
-        + " is stored. \n(Example: C:\\Users\\User\\Desktop\\Misc\\Music\\):"
-    )
+def gather_local_data(directory):
     local_songs = os.listdir(directory)
     i = 0
     for song_ in local_songs:
@@ -44,11 +41,93 @@ def save_song_urls_to_disk(needed_songs_):
             file.write(needed_songs_[song_]["URL"] + "\n")
 
 
+def gather_YouTube_input_from_GUI():
+    sg_layout = [
+        [sg.Text("Enter your YouTube Data V3 API key")],
+        [sg.InputText()],
+        [sg.Text("Enter your YouTube playlist's ID")],
+        [sg.InputText()],
+        [sg.Button("Submit"), sg.Button("Exit")],
+    ]
+
+    window = sg.Window("YTCompare").Layout(sg_layout)
+    event, values = window.Read()
+    if event == "Exit":
+        raise SystemExit("Closing")
+    window.Close()
+    return event, values
+
+
+def gather_local_input_from_GUI():
+    event, (fname,) = (
+        sg.Window("YTCompare")
+        .Layout(
+            [
+                [sg.Text("Select your local music directory")],
+                [sg.In(), sg.FolderBrowse()],
+                [sg.CloseButton("Accept"), sg.CloseButton("Exit")],
+            ]
+        )
+        .Read()
+    )
+    if event == "Exit":
+        raise SystemExit("Closing")
+    if not fname:
+        sg.Popup("Closing", "No folder supplied")
+        raise SystemExit("Closing: No folder supplied")
+
+    return event, fname
+
+
+def determine_song_similarity_from_GUI(youtube_song_title_, local_song_):
+    """
+    Returns True if songs are the same, returns False if they are different.
+    """
+    window_size = (800, 250)
+    first_song = "Song 1: " + youtube_song_title_
+    second_song = "Song 2: " + local_song_
+
+    sg_layout = [
+        [sg.Text("Are these songs the same?", size=(200, 1), justification="center")],
+        [sg.Text(first_song, size=(200, 1), justification="center")],
+        [sg.Text(second_song, size=(200, 1), justification="center")],
+        [sg.Button("Yes", size=(15, 2), pad=(350, 10))],
+        [sg.Button("No", size=(15, 2), pad=(350, 10))],
+        [sg.Button("Exit", button_color=("white", "red"), size=(10, 1), pad=(350, 10))],
+    ]
+
+    window = sg.Window("YTCompare").Layout(sg_layout).Finalize()
+    window.Size = window_size
+    event, values = window.Read()
+    window.Close()
+    if event == "Yes":
+        return True
+    elif event == "No":
+        return False
+    elif event == "Exit" or event is None:
+        raise SystemExit("Closing")
+
+    window.Close()
+
+
+def finished_working_GUI():
+    text = "All done. Your song URLs can be found in a text document within the directory from where you ran this tool. (song_urls.txt)"
+    sg.PopupScrolled(text)
+    raise SystemExit("Closing")
+
+
 if __name__ == "__main__":
     domain = "www.youtube.com/watch?v="
-    local_song_list = gather_local_data()
-    playlist_id = input("Enter your YouTube Playlist ID: ")
-    api_key = input("Enter your YouTube Data v3 API key: ")
+
+    events, values = gather_YouTube_input_from_GUI()
+
+    api_key = values[0]
+    playlist_id = values[1]
+
+    event, local_directory = gather_local_input_from_GUI()
+    print(local_directory)
+
+    local_song_list = gather_local_data(local_directory)
 
     data = gather_data(playlist_id, api_key)
     page_token = data["nextPageToken"]
@@ -88,28 +167,21 @@ if __name__ == "__main__":
                     song_needed = False
                     break
                 elif youtube_song_title[0:16] == local_song[0:16]:
-                    print("Song 1: " + youtube_song_title)
-                    print("Song 2: " + local_song)
-                    user_input = input(
-                        "Are these songs the same? (Enter 1 if yes (or just press enter), enter 2 if not): "
-                    )
-                    if user_input.lower() == "2" or user_input.lower() == "no":
-                        song_needed = True
-                    else:
+                    if determine_song_similarity_from_GUI(
+                        youtube_song_title, local_song
+                    ):
                         song_needed = False
                         break
+                    else:
+                        song_needed = True
                 elif youtube_song_title != local_song:
                     song_needed = True
             except IndexError:
-                print("Song 1: " + youtube_song_title)
-                print("Song 2: " + local_song)
-                user_input = input(
-                    "Are these songs the same? (Enter 1 if yes, enter 2 if not."
-                )
-                if user_input.lower() == "2" or user_input.lower() == "no":
-                    song_needed = True
-                else:
+                if determine_song_similarity_from_GUI(youtube_song_title, local_song):
                     song_needed = False
+                    break
+                else:
+                    song_needed = True
         if song_needed:
             needed_songs[song_number] = {
                 "Title": youtube_song_title,
@@ -119,6 +191,5 @@ if __name__ == "__main__":
 
     save_song_urls_to_disk(needed_songs)
 
-    print(
-        "Finished. Your song URLs can be found in a text document within the directory from where you ran this tool."
-    )
+    finished_working_GUI()
+    print("Finished")
