@@ -4,17 +4,24 @@ A GUI tool to compare YouTube playlist songs to songs on your local machine and 
 This program will output a text file (song_urls.txt) containing the missing song URLs in the directory from which it was run.
 
 ## Requirements
-Python 3
-
-PySimpleGUI (`pip install PySimpleGUI` or `python -m pip install PySimpleGUI`)
-
- Requests (`pip install requests` or `python -m pip install requests`)
  
  You will have to provide a [YouTube Data v3 API key.](https://developers.google.com/youtube/v3/getting-started)
 
 ## Installation
+
+Download the [Windows executable.](https://github.com/hillt03/YTCompare/releases)  
+Extract and run YTCompare.exe.
+
+## Alternative Installation
 Clone the repo or download `YTCompare.py`, run via command-line with `python YTCompare.py` and follow the prompts.
 
+### Alternative Installation Requirements
+Python 3
+
+PySimpleGUI ( `pip install PySimpleGUI` )
+
+ Requests ( `pip install requests` )
+ 
 ## FAQ
 #### How do I find my YouTube playlist's ID?
 Go to any video on your playlist and the URL will look similar to this:  
